@@ -14,6 +14,7 @@
     .controls{display:flex;gap:8px;align-items:center}
     button{background:var(--accent);color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
     button.ghost{background:transparent;color:var(--accent);border:1px solid rgba(0,102,204,0.12)}
+    button:disabled{opacity:0.6;cursor:not-allowed}
     .date-display{font-weight:700}
     .card{background:var(--card);border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(12,18,40,0.06)}
     .section-title{font-weight:700;margin-top:14px;margin-bottom:8px}
@@ -23,8 +24,12 @@
     .muted{color:var(--muted);font-size:13px}
     .form-row{margin-top:8px}
     textarea,input[type="text"]{width:100%;padding:8px;border-radius:6px;border:1px solid #e6eef8;font-size:14px}
-    .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .status{padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px}
+    .success{background:#d4edda;color:#155724}
+    .loading{background:#fff3cd;color:#856404}
+    .error{background:#f8d7da;color:#721c24}
+    .access-panel{background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px}
+    .user-badge{background:#e7f3ff;padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px}
     @media(max-width:520px){header{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
@@ -33,149 +38,301 @@
     <header>
       <div>
         <h1>Шкільне меню</h1>
-        <div class="muted small">Показано меню на <span id="readableDate">...</span></div>
+        <div class="muted small">Показано меню на <span id="readableDate">...</span> <span id="status" class="status"></span></div>
       </div>
       <div class="controls">
         <button id="prev" class="ghost">←</button>
         <input type="date" id="date" />
         <button id="next" class="ghost">→</button>
         <button id="today">Сьогодні</button>
-        <button id="login" class="ghost">Адмін</button>
+        <button id="refresh">🔄 Оновити</button>
+        <button id="editBtn" class="ghost">✏️ Редагувати</button>
+        <span id="userBadge" class="user-badge" style="display:none">👤 Адмін</span>
       </div>
     </header>
 
     <main class="card">
-      <div class="section-title">Міські</div>
+      <!-- Панель доступу -->
+      <div id="accessPanel" class="access-panel">
+        <h3>🔐 Доступ до редагування</h3>
+        <div class="form-row">
+          <label>Пароль адміністратора:</label>
+          <input type="password" id="adminPassword" placeholder="Введіть пароль" style="width:100%" />
+        </div>
+        <button id="loginBtn">🔓 Увійти</button>
+        <div class="muted" style="margin-top:8px;font-size:12px">
+          Отримайте пароль у адміністратора школи для редагування меню
+        </div>
+      </div>
+
+      <div class="section-title">Міські діти</div>
       <div id="cityArea" class="grid" aria-live="polite"></div>
 
-      <div class="section-title">Іногородні</div>
+      <div class="section-title">Іногородні діти</div>
       <div id="nonCityArea" class="grid" aria-live="polite"></div>
 
-      <div id="editor" style="display:none;margin-top:14px" class="card">
-        <h3>Редагувати меню на <span id="editDateLabel"></span></h3>
+      <!-- Редактор -->
+      <div id="editor" style="display:none;margin-top:20px;padding:20px;background:#f8f9fa;border-radius:8px;">
+        <h3>✏️ Редагувати меню на <span id="editDateLabel"></span></h3>
+        
+        <div class="muted" style="margin-bottom:15px;">
+          💡 Зміни будуть збережені для всіх відвідувачів сайту
+        </div>
+        
+        <div class="section-title">🍽️ Міські діти</div>
+        <div class="form-row"><label>🍲 Обід</label><textarea id="e_city_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, компот"></textarea></div>
 
-        <div class="section-title">Міські діти</div>
-        <div class="form-row"><label>Обід</label><textarea id="e_city_lunch"></textarea></div>
+        <div class="section-title">🏠 Іногородні діти</div>
+        <div class="form-row"><label>🍳 Сніданок</label><textarea id="e_nc_breakfast" rows="2" placeholder="Наприклад: Каша гречана, бутерброд, чай"></textarea></div>
+        <div class="form-row"><label>🍎 Полуденок</label><textarea id="e_nc_snack" rows="2" placeholder="Наприклад: Яблуко, печиво, сік"></textarea></div>
+        <div class="form-row"><label>🍲 Обід</label><textarea id="e_nc_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, салат"></textarea></div>
+        <div class="form-row"><label>🥛 Підвечірок</label><textarea id="e_nc_evening" rows="2" placeholder="Наприклад: Йогурт, фрукт"></textarea></div>
+        <div class="form-row"><label>🍛 Вечеря</label><textarea id="e_nc_dinner" rows="2" placeholder="Наприклад: Омлет, салат, кефір"></textarea></div>
 
-        <div class="section-title">Іногородні діти</div>
-        <div class="form-row"><label>Сніданок</label><textarea id="e_nc_breakfast"></textarea></div>
-        <div class="form-row"><label>Полуденок</label><textarea id="e_nc_snack"></textarea></div>
-        <div class="form-row"><label>Обід</label><textarea id="e_nc_lunch"></textarea></div>
-        <div class="form-row"><label>Підвечірок</label><textarea id="e_nc_evening"></textarea></div>
-        <div class="form-row"><label>Вечеря</label><textarea id="e_nc_dinner"></textarea></div>
-
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button id="save">Зберегти</button>
-          <button id="cancel" class="ghost">Скасувати</button>
-          <button id="delete" class="ghost">Видалити цей день</button>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+          <button id="save">💾 Зберегти для всіх</button>
+          <button id="cancel" class="ghost">❌ Скасувати</button>
         </div>
       </div>
     </main>
   </div>
 
   <script>
-    const STORAGE_KEY = 'school_menu_db_v1';
-    let db = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    // === НАЛАШТУВАННЯ ДЛЯ АДМІНІСТРАТОРА ===
+    // Зміни ці значення на свої:
+    const ADMIN_PASSWORD = "school123123"; // Пароль для вчителів
+    const GITHUB_CONFIG = {
+      token: "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", // ТВІЙ ТОКЕН
+      repoOwner: "Pomasvg",       // Твій GitHub username (без @)
+      repoName: "Menu"    // Назва репозиторію де сайт
+    };
+    // =======================================
+
+    let currentData = {};
+    let isAdmin = false;
 
     const dateInput = document.getElementById('date');
     const readableDate = document.getElementById('readableDate');
     const cityArea = document.getElementById('cityArea');
     const nonCityArea = document.getElementById('nonCityArea');
     const editor = document.getElementById('editor');
+    const statusEl = document.getElementById('status');
+    const accessPanel = document.getElementById('accessPanel');
+    const userBadge = document.getElementById('userBadge');
 
-    const e_city_lunch = document.getElementById('e_city_lunch');
-    const e_nc_breakfast = document.getElementById('e_nc_breakfast');
-    const e_nc_snack = document.getElementById('e_nc_snack');
-    const e_nc_lunch = document.getElementById('e_nc_lunch');
-    const e_nc_evening = document.getElementById('e_nc_evening');
-    const e_nc_dinner = document.getElementById('e_nc_dinner');
+    function isoToday() { return new Date().toISOString().slice(0,10); }
+    function niceDate(iso) { return new Date(iso).toLocaleDateString('uk-UA',{year:'numeric',month:'long',day:'numeric'}); }
 
-    const editDateLabel = document.getElementById('editDateLabel');
+    function setStatus(text, type = '') {
+      statusEl.textContent = text;
+      statusEl.className = `status ${type}`;
+    }
 
-    function isoToday(){ return new Date().toISOString().slice(0,10); }
-    function niceDate(iso){ return new Date(iso).toLocaleDateString('uk-UA',{year:'numeric',month:'long',day:'numeric'}); }
+    // Завантажити дані з GitHub
+    async function loadData() {
+      setStatus('Завантаження...', 'loading');
+      try {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/contents/menu.json`;
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `token ${GITHUB_CONFIG.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
 
-    function ensureDateInput(){ if(!dateInput.value){ dateInput.value = isoToday(); } }
-
-    function renderForDate(iso){
-      if(!iso) iso = dateInput.value || isoToday();
-      readableDate.textContent = niceDate(iso);
-      const day = db[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
-
-      cityArea.innerHTML = '';
-      const cityLunchCard = document.createElement('div'); cityLunchCard.className='meal';
-      cityLunchCard.innerHTML = `<h4>Обід</h4><div>${day.city.lunch || '—'}</div>`;
-      cityArea.appendChild(cityLunchCard);
-
-      nonCityArea.innerHTML = '';
-      const fields = [ ['Сніданок', day.nonCity.breakfast], ['Полуденок', day.nonCity.snack], ['Обід', day.nonCity.lunch], ['Підвечірок', day.nonCity.evening], ['Вечеря', day.nonCity.dinner] ];
-      for(const [title, val] of fields){
-        const div = document.createElement('div'); div.className='meal';
-        div.innerHTML = `<h4>${title}</h4><div>${val || '—'}</div>`;
-        nonCityArea.appendChild(div);
+        if (response.ok) {
+          const fileData = await response.json();
+          const content = JSON.parse(atob(fileData.content));
+          currentData = content;
+          setStatus('Оновлено', 'success');
+          setTimeout(() => setStatus(''), 3000);
+          return true;
+        } else {
+          currentData = {};
+          setStatus('Створено новий файл', 'success');
+          return true;
+        }
+      } catch (error) {
+        setStatus('Помилка завантаження', 'error');
+        console.error('Помилка:', error);
+        return false;
       }
     }
 
-    function saveDB(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+    // Зберегти дані на GitHub
+    async function saveData() {
+      setStatus('Збереження...', 'loading');
+      try {
+        const url = `https://api.github.com/repos/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/contents/menu.json`;
+        
+        let sha = '';
+        try {
+          const getResponse = await fetch(url, {
+            headers: {
+              'Authorization': `token ${GITHUB_CONFIG.token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+          if (getResponse.ok) {
+            const fileData = await getResponse.json();
+            sha = fileData.sha;
+          }
+        } catch (e) {}
 
-    document.getElementById('today').addEventListener('click', ()=>{ dateInput.value = isoToday(); renderForDate(dateInput.value); });
-    document.getElementById('prev').addEventListener('click', ()=>{ changeDateBy(-1); });
-    document.getElementById('next').addEventListener('click', ()=>{ changeDateBy(1); });
+        const content = btoa(JSON.stringify(currentData, null, 2));
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${GITHUB_CONFIG.token}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: `Оновлення меню за ${dateInput.value}`,
+            content: content,
+            sha: sha || undefined
+          })
+        });
 
-    function changeDateBy(delta){ const cur = new Date(dateInput.value || isoToday()); cur.setDate(cur.getDate() + delta); const iso = cur.toISOString().slice(0,10); dateInput.value = iso; renderForDate(iso); }
+        if (response.ok) {
+          setStatus('Збережено для всіх!', 'success');
+          setTimeout(() => setStatus(''), 3000);
+          return true;
+        } else {
+          throw new Error('Помилка збереження');
+        }
+      } catch (error) {
+        setStatus('Помилка збереження', 'error');
+        console.error('Помилка:', error);
+        return false;
+      }
+    }
 
-    dateInput.addEventListener('change', ()=> renderForDate(dateInput.value));
+    // Відобразити меню
+    function renderForDate(iso) {
+      if (!iso) iso = dateInput.value || isoToday();
+      readableDate.textContent = niceDate(iso);
+      const day = currentData[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
 
-    let isAdmin = false;
-    document.getElementById('login').addEventListener('click', ()=>{
-      if(isAdmin){ isAdmin=false; document.getElementById('login').textContent='Адмін'; editor.style.display='none'; return; }
-      const pass = prompt('Введіть пароль адміністратора');
-      if(pass === '333333333333'){ isAdmin=true; document.getElementById('login').textContent='Вийти'; openEditorFor(dateInput.value || isoToday()); }
-      else if(pass === null){  } else { alert('Невірний пароль'); }
+      cityArea.innerHTML = '';
+      const cityLunchCard = document.createElement('div');
+      cityLunchCard.className = 'meal';
+      cityLunchCard.innerHTML = `<h4>🍽️ Обід</h4><div>${day.city.lunch || '—'}</div>`;
+      cityArea.appendChild(cityLunchCard);
+
+      nonCityArea.innerHTML = '';
+      const fields = [
+        ['🍳 Сніданок', day.nonCity.breakfast],
+        ['🍎 Полуденок', day.nonCity.snack],
+        ['🍲 Обід', day.nonCity.lunch],
+        ['🥛 Підвечірок', day.nonCity.evening],
+        ['🍛 Вечеря', day.nonCity.dinner]
+      ];
+      
+      fields.forEach(([title, val]) => {
+        const div = document.createElement('div');
+        div.className = 'meal';
+        div.innerHTML = `<h4>${title}</h4><div>${val || '—'}</div>`;
+        nonCityArea.appendChild(div);
+      });
+    }
+
+    // Навігація
+    document.getElementById('today').addEventListener('click', () => {
+      dateInput.value = isoToday();
+      renderForDate(dateInput.value);
     });
 
-    function openEditorFor(iso){ if(!isAdmin){ alert('Потрібен доступ адміністратора'); return; }
-      const day = db[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
-      e_city_lunch.value = day.city.lunch || '';
-      e_nc_breakfast.value = day.nonCity.breakfast || '';
-      e_nc_snack.value = day.nonCity.snack || '';
-      e_nc_lunch.value = day.nonCity.lunch || '';
-      e_nc_evening.value = day.nonCity.evening || '';
-      e_nc_dinner.value = day.nonCity.dinner || '';
-      editDateLabel.textContent = niceDate(iso);
+    document.getElementById('prev').addEventListener('click', () => changeDateBy(-1));
+    document.getElementById('next').addEventListener('click', () => changeDateBy(1));
+    document.getElementById('refresh').addEventListener('click', () => loadData().then(() => renderForDate(dateInput.value)));
+
+    function changeDateBy(delta) {
+      const cur = new Date(dateInput.value || isoToday());
+      cur.setDate(cur.getDate() + delta);
+      const iso = cur.toISOString().slice(0,10);
+      dateInput.value = iso;
+      renderForDate(iso);
+    }
+
+    dateInput.addEventListener('change', () => renderForDate(dateInput.value));
+
+    // Управління доступом
+    document.getElementById('loginBtn').addEventListener('click', () => {
+      const password = document.getElementById('adminPassword').value;
+      if (password === ADMIN_PASSWORD) {
+        isAdmin = true;
+        accessPanel.style.display = 'none';
+        userBadge.style.display = 'inline-block';
+        document.getElementById('editBtn').style.display = 'block';
+        alert('✅ Ви увійшли як адміністратор! Тепер ви можете редагувати меню.');
+      } else {
+        alert('❌ Невірний пароль! Зверніться до адміністратора школи.');
+      }
+    });
+
+    // Редактор
+    document.getElementById('editBtn').addEventListener('click', () => {
+      if (!isAdmin) {
+        alert('⚠️ Для редагування потрібен пароль адміністратора!');
+        accessPanel.style.display = 'block';
+        return;
+      }
+      openEditorFor(dateInput.value || isoToday());
+    });
+
+    function openEditorFor(iso) {
+      const day = currentData[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
+      
+      document.getElementById('e_city_lunch').value = day.city.lunch || '';
+      document.getElementById('e_nc_breakfast').value = day.nonCity.breakfast || '';
+      document.getElementById('e_nc_snack').value = day.nonCity.snack || '';
+      document.getElementById('e_nc_lunch').value = day.nonCity.lunch || '';
+      document.getElementById('e_nc_evening').value = day.nonCity.evening || '';
+      document.getElementById('e_nc_dinner').value = day.nonCity.dinner || '';
+      document.getElementById('editDateLabel').textContent = niceDate(iso);
       editor.style.display = 'block';
     }
 
-    document.getElementById('date').addEventListener('dblclick', ()=>{ if(isAdmin) openEditorFor(dateInput.value || isoToday()); });
+    document.getElementById('cancel').addEventListener('click', () => {
+      editor.style.display = 'none';
+    });
 
-    document.getElementById('save').addEventListener('click', ()=>{
-      if(!isAdmin){ alert('Потрібен доступ адміністратора'); return; }
+    document.getElementById('save').addEventListener('click', async () => {
       const iso = dateInput.value || isoToday();
-      db[iso] = {
-        city: { lunch: e_city_lunch.value.trim() },
+      
+      currentData[iso] = {
+        city: { lunch: document.getElementById('e_city_lunch').value.trim() },
         nonCity: {
-          breakfast: e_nc_breakfast.value.trim(),
-          snack: e_nc_snack.value.trim(),
-          lunch: e_nc_lunch.value.trim(),
-          evening: e_nc_evening.value.trim(),
-          dinner: e_nc_dinner.value.trim()
+          breakfast: document.getElementById('e_nc_breakfast').value.trim(),
+          snack: document.getElementById('e_nc_snack').value.trim(),
+          lunch: document.getElementById('e_nc_lunch').value.trim(),
+          evening: document.getElementById('e_nc_evening').value.trim(),
+          dinner: document.getElementById('e_nc_dinner').value.trim()
         }
       };
-      saveDB();
-      renderForDate(iso);
-      editor.style.display='none';
-      alert('Збережено');
+
+      const success = await saveData();
+      if (success) {
+        renderForDate(iso);
+        editor.style.display = 'none';
+      }
     });
 
-    document.getElementById('cancel').addEventListener('click', ()=>{ editor.style.display='none'; });
+    // Автоматичне оновлення кожні 60 секунд
+    setInterval(() => {
+      loadData().then(() => renderForDate(dateInput.value));
+    }, 60000);
 
-    document.getElementById('delete').addEventListener('click', ()=>{
-      if(!isAdmin) return alert('Потрібен доступ адміністратора');
-      const iso = dateInput.value || isoToday();
-      if(confirm('Видалити меню для ' + niceDate(iso) + '?')){ delete db[iso]; saveDB(); renderForDate(iso); editor.style.display='none'; }
-    });
-
-    (function init(){ dateInput.value = isoToday(); renderForDate(dateInput.value); })();
+    // Ініціалізація
+    (async function init() {
+      dateInput.value = isoToday();
+      await loadData();
+      renderForDate(dateInput.value);
+      
+      // Приховати кнопку редагування для звичайних користувачів
+      document.getElementById('editBtn').style.display = 'none';
+    })();
   </script>
 </body>
 </html>
