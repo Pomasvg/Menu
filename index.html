@@ -28,8 +28,9 @@
     .success{background:#d4edda;color:#155724}
     .loading{background:#fff3cd;color:#856404}
     .error{background:#f8d7da;color:#721c24}
-    .access-panel{background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px}
+    .access-panel{background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px;border:1px dashed #ccc}
     .user-badge{background:#e7f3ff;padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px}
+    .admin-section{margin-top:30px;padding-top:20px;border-top:1px solid #e6eef8}
     @media(max-width:520px){header{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
@@ -37,7 +38,7 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>Шкільне меню</h1>
+        <h1>🍽️ Шкільне меню</h1>
         <div class="muted small">Показано меню на <span id="readableDate">...</span> <span id="status" class="status"></span></div>
       </div>
       <div class="controls">
@@ -46,52 +47,59 @@
         <button id="next" class="ghost">→</button>
         <button id="today">Сьогодні</button>
         <button id="refresh">🔄 Оновити</button>
-        <button id="editBtn" class="ghost">✏️ Редагувати</button>
+        <button id="adminToggle" class="ghost">⚙️ Для вчителів</button>
         <span id="userBadge" class="user-badge" style="display:none">👤 Адмін</span>
       </div>
     </header>
 
     <main class="card">
-      <!-- Панель доступу -->
-      <div id="accessPanel" class="access-panel">
-        <h3>🔐 Доступ до редагування</h3>
-        <div class="form-row">
-          <label>Пароль адміністратора:</label>
-          <input type="password" id="adminPassword" placeholder="Введіть пароль" style="width:100%" />
-        </div>
-        <button id="loginBtn">🔓 Увійти</button>
-        <div class="muted" style="margin-top:8px;font-size:12px">
-          Отримайте пароль у адміністратора школи для редагування меню
-        </div>
-      </div>
-
-      <div class="section-title">Міські діти</div>
+      <!-- Основна інформація для всіх -->
+      <div class="section-title">🏫 Міські діти</div>
       <div id="cityArea" class="grid" aria-live="polite"></div>
 
-      <div class="section-title">Іногородні діти</div>
+      <div class="section-title">🏠 Іногородні діти</div>
       <div id="nonCityArea" class="grid" aria-live="polite"></div>
 
-      <!-- Редактор -->
-      <div id="editor" style="display:none;margin-top:20px;padding:20px;background:#f8f9fa;border-radius:8px;">
-        <h3>✏️ Редагувати меню на <span id="editDateLabel"></span></h3>
-        
-        <div class="muted" style="margin-bottom:15px;">
-          💡 Зміни будуть збережені для всіх відвідувачів сайту
+      <!-- Секція адміністратора (прихована за замовчуванням) -->
+      <div class="admin-section">
+        <div style="text-align:center;margin-bottom:15px;">
+          <button id="toggleAdminPanel" class="ghost" style="font-size:12px;">👨‍🏫 Розділ для вчителів</button>
         </div>
         
-        <div class="section-title">🍽️ Міські діти</div>
-        <div class="form-row"><label>🍲 Обід</label><textarea id="e_city_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, компот"></textarea></div>
+        <div id="accessPanel" class="access-panel" style="display:none">
+          <h3>🔐 Доступ до редагування</h3>
+          <div class="form-row">
+            <label>Пароль адміністратора:</label>
+            <input type="password" id="adminPassword" placeholder="Введіть пароль" style="width:100%" />
+          </div>
+          <button id="loginBtn">🔓 Увійти</button>
+          <div class="muted" style="margin-top:8px;font-size:12px">
+            Отримайте пароль у адміністратора школи для редагування меню
+          </div>
+        </div>
 
-        <div class="section-title">🏠 Іногородні діти</div>
-        <div class="form-row"><label>🍳 Сніданок</label><textarea id="e_nc_breakfast" rows="2" placeholder="Наприклад: Каша гречана, бутерброд, чай"></textarea></div>
-        <div class="form-row"><label>🍎 Полуденок</label><textarea id="e_nc_snack" rows="2" placeholder="Наприклад: Яблуко, печиво, сік"></textarea></div>
-        <div class="form-row"><label>🍲 Обід</label><textarea id="e_nc_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, салат"></textarea></div>
-        <div class="form-row"><label>🥛 Підвечірок</label><textarea id="e_nc_evening" rows="2" placeholder="Наприклад: Йогурт, фрукт"></textarea></div>
-        <div class="form-row"><label>🍛 Вечеря</label><textarea id="e_nc_dinner" rows="2" placeholder="Наприклад: Омлет, салат, кефір"></textarea></div>
+        <!-- Редактор -->
+        <div id="editor" style="display:none;margin-top:20px;padding:20px;background:#f8f9fa;border-radius:8px;">
+          <h3>✏️ Редагувати меню на <span id="editDateLabel"></span></h3>
+          
+          <div class="muted" style="margin-bottom:15px;">
+            💡 Зміни будуть збережені для всіх відвідувачів сайту
+          </div>
+          
+          <div class="section-title">🍽️ Міські діти</div>
+          <div class="form-row"><label>🍲 Обід</label><textarea id="e_city_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, компот"></textarea></div>
 
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-          <button id="save">💾 Зберегти для всіх</button>
-          <button id="cancel" class="ghost">❌ Скасувати</button>
+          <div class="section-title">🏠 Іногородні діти</div>
+          <div class="form-row"><label>🍳 Сніданок</label><textarea id="e_nc_breakfast" rows="2" placeholder="Наприклад: Каша гречана, бутерброд, чай"></textarea></div>
+          <div class="form-row"><label>🍎 Полуденок</label><textarea id="e_nc_snack" rows="2" placeholder="Наприклад: Яблуко, печиво, сік"></textarea></div>
+          <div class="form-row"><label>🍲 Обід</label><textarea id="e_nc_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, салат"></textarea></div>
+          <div class="form-row"><label>🥛 Підвечірок</label><textarea id="e_nc_evening" rows="2" placeholder="Наприклад: Йогурт, фрукт"></textarea></div>
+          <div class="form-row"><label>🍛 Вечеря</label><textarea id="e_nc_dinner" rows="2" placeholder="Наприклад: Омлет, салат, кефір"></textarea></div>
+
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+            <button id="save">💾 Зберегти для всіх</button>
+            <button id="cancel" class="ghost">❌ Скасувати</button>
+          </div>
         </div>
       </div>
     </main>
@@ -99,17 +107,16 @@
 
   <script>
     // === НАЛАШТУВАННЯ ДЛЯ АДМІНІСТРАТОРА ===
-    // Зміни ці значення на свої:
-    const ADMIN_PASSWORD = "school123123"; // Пароль для вчителів
+    const ADMIN_PASSWORD = "school123123";
     const GITHUB_CONFIG = {
-      token: "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", // ТВІЙ ТОКЕН
-      repoOwner: "Pomasvg",       // Твій GitHub username (без @)
-      repoName: "Menu"    // Назва репозиторію де сайт
+      repoOwner: "Pomasvg",       
+      repoName: "menu"
     };
     // =======================================
 
     let currentData = {};
     let isAdmin = false;
+    let githubToken = "";
 
     const dateInput = document.getElementById('date');
     const readableDate = document.getElementById('readableDate');
@@ -128,28 +135,45 @@
       statusEl.className = `status ${type}`;
     }
 
+    // Безпечне отримання токена
+    async function getGitHubToken() {
+      if (githubToken) return githubToken;
+      
+      // Перевіряємо localStorage
+      const savedToken = localStorage.getItem('github_token');
+      if (savedToken) {
+        githubToken = savedToken;
+        return savedToken;
+      }
+      
+      // Запитуємо токен у користувача
+      const token = prompt('🔐 Для збереження меню введіть GitHub Token:');
+      if (token) {
+        githubToken = token;
+        localStorage.setItem('github_token', token);
+        return token;
+      }
+      
+      return null;
+    }
+
     // Завантажити дані з GitHub
     async function loadData() {
       setStatus('Завантаження...', 'loading');
       try {
-        const url = `https://api.github.com/repos/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/contents/menu.json`;
-        const response = await fetch(url, {
-          headers: {
-            'Authorization': `token ${GITHUB_CONFIG.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-
+        // Для читання використовуємо публічний доступ
+        const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/main/menu.json`;
+        const response = await fetch(url + '?t=' + Date.now()); // Додаємо timestamp для уникнення кешу
+        
         if (response.ok) {
-          const fileData = await response.json();
-          const content = JSON.parse(atob(fileData.content));
+          const content = await response.json();
           currentData = content;
           setStatus('Оновлено', 'success');
           setTimeout(() => setStatus(''), 3000);
           return true;
         } else {
           currentData = {};
-          setStatus('Створено новий файл', 'success');
+          setStatus('Меню ще не створене', 'success');
           return true;
         }
       } catch (error) {
@@ -161,6 +185,12 @@
 
     // Зберегти дані на GitHub
     async function saveData() {
+      const token = await getGitHubToken();
+      if (!token) {
+        setStatus('Потрібен токен для збереження', 'error');
+        return false;
+      }
+
       setStatus('Збереження...', 'loading');
       try {
         const url = `https://api.github.com/repos/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/contents/menu.json`;
@@ -169,7 +199,7 @@
         try {
           const getResponse = await fetch(url, {
             headers: {
-              'Authorization': `token ${GITHUB_CONFIG.token}`,
+              'Authorization': `token ${token}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           });
@@ -183,7 +213,7 @@
         const response = await fetch(url, {
           method: 'PUT',
           headers: {
-            'Authorization': `token ${GITHUB_CONFIG.token}`,
+            'Authorization': `token ${token}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
@@ -199,10 +229,11 @@
           setTimeout(() => setStatus(''), 3000);
           return true;
         } else {
-          throw new Error('Помилка збереження');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Помилка збереження');
         }
       } catch (error) {
-        setStatus('Помилка збереження', 'error');
+        setStatus(`Помилка: ${error.message}`, 'error');
         console.error('Помилка:', error);
         return false;
       }
@@ -258,13 +289,22 @@
     dateInput.addEventListener('change', () => renderForDate(dateInput.value));
 
     // Управління доступом
+    document.getElementById('toggleAdminPanel').addEventListener('click', () => {
+      accessPanel.style.display = accessPanel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.getElementById('adminToggle').addEventListener('click', () => {
+      document.querySelector('.admin-section').scrollIntoView({ behavior: 'smooth' });
+      accessPanel.style.display = 'block';
+    });
+
     document.getElementById('loginBtn').addEventListener('click', () => {
       const password = document.getElementById('adminPassword').value;
       if (password === ADMIN_PASSWORD) {
         isAdmin = true;
         accessPanel.style.display = 'none';
         userBadge.style.display = 'inline-block';
-        document.getElementById('editBtn').style.display = 'block';
+        document.getElementById('adminToggle').textContent = '✏️ Редагувати';
         alert('✅ Ви увійшли як адміністратор! Тепер ви можете редагувати меню.');
       } else {
         alert('❌ Невірний пароль! Зверніться до адміністратора школи.');
@@ -272,9 +312,9 @@
     });
 
     // Редактор
-    document.getElementById('editBtn').addEventListener('click', () => {
+    document.getElementById('adminToggle').addEventListener('click', () => {
       if (!isAdmin) {
-        alert('⚠️ Для редагування потрібен пароль адміністратора!');
+        document.querySelector('.admin-section').scrollIntoView({ behavior: 'smooth' });
         accessPanel.style.display = 'block';
         return;
       }
@@ -292,6 +332,7 @@
       document.getElementById('e_nc_dinner').value = day.nonCity.dinner || '';
       document.getElementById('editDateLabel').textContent = niceDate(iso);
       editor.style.display = 'block';
+      editor.scrollIntoView({ behavior: 'smooth' });
     }
 
     document.getElementById('cancel').addEventListener('click', () => {
@@ -329,9 +370,6 @@
       dateInput.value = isoToday();
       await loadData();
       renderForDate(dateInput.value);
-      
-      // Приховати кнопку редагування для звичайних користувачів
-      document.getElementById('editBtn').style.display = 'none';
     })();
   </script>
 </body>
