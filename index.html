@@ -110,7 +110,7 @@
     const ADMIN_PASSWORD = "school123123";
     const GITHUB_CONFIG = {
       repoOwner: "Pomasvg",       
-      repoName: "Menu"
+      repoName: "menu"
     };
     // =======================================
 
@@ -142,12 +142,6 @@
       }));
     }
 
-    function b64_to_utf8(str) {
-      return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-    }
-
     // Безпечне отримання токена
     async function getGitHubToken() {
       if (githubToken) return githubToken;
@@ -160,14 +154,37 @@
       }
       
       // Запитуємо токен у користувача
-      const token = prompt('🔐 Для збереження меню введіть GitHub Token:');
+      const token = prompt('🔐 Для збереження меню введіть GitHub Token:\n\nЯк отримати токен:\n1. Зайдіть на GitHub.com → Settings → Developer settings → Personal access tokens → Tokens (classic)\n2. Створіть новий токен з правами "repo"\n3. Скопіюйте токен (починається з ghp_) та вставте тут');
       if (token) {
-        githubToken = token;
-        localStorage.setItem('github_token', token);
-        return token;
+        // Перевіряємо токен
+        const isValid = await validateToken(token);
+        if (isValid) {
+          githubToken = token;
+          localStorage.setItem('github_token', token);
+          return token;
+        } else {
+          alert('❌ Невірний токен! Перевірте правильність та права доступу.');
+          localStorage.removeItem('github_token');
+          return null;
+        }
       }
       
       return null;
+    }
+
+    // Перевірка токена
+    async function validateToken(token) {
+      try {
+        const response = await fetch('https://api.github.com/user', {
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        return response.ok;
+      } catch (error) {
+        return false;
+      }
     }
 
     // Завантажити дані з GitHub
@@ -176,7 +193,7 @@
       try {
         // Для читання використовуємо публічний доступ
         const url = `https://raw.githubusercontent.com/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/main/menu.json`;
-        const response = await fetch(url + '?t=' + Date.now()); // Додаємо timestamp для уникнення кешу
+        const response = await fetch(url + '?t=' + Date.now());
         
         if (response.ok) {
           const content = await response.json();
@@ -184,10 +201,13 @@
           setStatus('Оновлено', 'success');
           setTimeout(() => setStatus(''), 3000);
           return true;
-        } else {
+        } else if (response.status === 404) {
+          // Файл не існує - це нормально для першого запуску
           currentData = {};
           setStatus('Меню ще не створене', 'success');
           return true;
+        } else {
+          throw new Error(`Помилка завантаження: ${response.status}`);
         }
       } catch (error) {
         setStatus('Помилка завантаження', 'error');
@@ -208,6 +228,7 @@
       try {
         const url = `https://api.github.com/repos/${GITHUB_CONFIG.repoOwner}/${GITHUB_CONFIG.repoName}/contents/menu.json`;
         
+        // Спочатку отримуємо інформацію про файл (якщо він існує)
         let sha = '';
         try {
           const getResponse = await fetch(url, {
@@ -216,13 +237,31 @@
               'Accept': 'application/vnd.github.v3+json'
             }
           });
+          
+          if (getResponse.status === 401) {
+            throw new Error('Невірний токен. Спробуйте ввести токен знову.');
+          }
+          
           if (getResponse.ok) {
             const fileData = await getResponse.json();
             sha = fileData.sha;
+          } else if (getResponse.status !== 404) {
+            throw new Error(`Помилка отримання файлу: ${getResponse.status}`);
           }
-        } catch (e) {}
+        } catch (error) {
+          if (error.message.includes('Невірний токен')) {
+            // Видаляємо невірний токен
+            localStorage.removeItem('github_token');
+            githubToken = "";
+            throw error;
+          }
+          // Для 404 помилки продовжуємо (файл не існує)
+          if (!error.message.includes('404')) {
+            throw error;
+          }
+        }
 
-        // Використовуємо правильне кодування для кирилиці
+        // Кодуємо дані для GitHub
         const jsonString = JSON.stringify(currentData, null, 2);
         const content = utf8_to_b64(jsonString);
         
@@ -246,11 +285,32 @@
           return true;
         } else {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Помилка збереження');
+          
+          if (response.status === 401) {
+            localStorage.removeItem('github_token');
+            githubToken = "";
+            throw new Error('Токен недійсний. Спробуйте ввести новий токен.');
+          } else if (response.status === 403) {
+            throw new Error('Недостатньо прав. Перевірте чи токен має права "repo".');
+          } else if (response.status === 404) {
+            throw new Error('Репозиторій не знайдено. Перевірте repoOwner та repoName.');
+          } else {
+            throw new Error(errorData.message || `Помилка збереження: ${response.status}`);
+          }
         }
       } catch (error) {
         setStatus(`Помилка: ${error.message}`, 'error');
-        console.error('Помилка:', error);
+        console.error('Помилка збереження:', error);
+        
+        // Якщо помилка токена, пропонуємо ввести новий
+        if (error.message.includes('токен') || error.message.includes('прав')) {
+          setTimeout(() => {
+            localStorage.removeItem('github_token');
+            githubToken = "";
+            getGitHubToken(); // Запитуємо новий токен
+          }, 2000);
+        }
+        
         return false;
       }
     }
