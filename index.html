@@ -31,6 +31,18 @@
     .access-panel{background:#f8f9fa;padding:15px;border-radius:8px;margin-top:15px;border:1px dashed #ccc}
     .user-badge{background:#e7f3ff;padding:4px 8px;border-radius:4px;font-size:12px;margin-left:8px}
     .admin-section{margin-top:30px;padding-top:20px;border-top:1px solid #e6eef8}
+    /* 👇 ДОДАВ НОВИЙ СТИЛЬ ДЛЯ АБЗАЦІВ */
+    .meal-content {
+      white-space: pre-line; /* Зберігає переноси рядків */
+      line-height: 1.5;
+    }
+    .meal-content ol, .meal-content ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .meal-content li {
+      margin-bottom: 4px;
+    }
     @media(max-width:520px){header{flex-direction:column;align-items:flex-start}}
   </style>
 </head>
@@ -80,18 +92,41 @@
           <h3>✏️ Редагувати меню на <span id="editDateLabel"></span></h3>
           
           <div class="muted" style="margin-bottom:15px;">
-            💡 Зміни будуть збережені для всіх відвідувачів сайту
+            💡 <strong>Як робити абзаци:</strong><br>
+            • Просто натискайте Enter для нового рядка<br>
+            • Для списків пишіть: 1. ...<br>2. ...<br>3. ...<br>
+            • Абзаци будуть збережені
           </div>
           
           <div class="section-title">🍽️ Міські діти</div>
-          <div class="form-row"><label>🍲 Обід</label><textarea id="e_city_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, компот"></textarea></div>
+          <div class="form-row"><label>🍲 Обід</label><textarea id="e_city_lunch" rows="6" placeholder="Наприклад:
+1. Борщ зі сметаною
+2. Котлета куряча
+3. Пюре картопляне
+4. Компот з сухофруктів"></textarea></div>
 
           <div class="section-title">🏠 Іногородні діти</div>
-          <div class="form-row"><label>🍳 Сніданок</label><textarea id="e_nc_breakfast" rows="2" placeholder="Наприклад: Каша гречана, бутерброд, чай"></textarea></div>
-          <div class="form-row"><label>🍎 Полуденок</label><textarea id="e_nc_snack" rows="2" placeholder="Наприклад: Яблуко, печиво, сік"></textarea></div>
-          <div class="form-row"><label>🍲 Обід</label><textarea id="e_nc_lunch" rows="3" placeholder="Наприклад: Борщ, котлета, пюре, салат"></textarea></div>
-          <div class="form-row"><label>🥛 Підвечірок</label><textarea id="e_nc_evening" rows="2" placeholder="Наприклад: Йогурт, фрукт"></textarea></div>
-          <div class="form-row"><label>🍛 Вечеря</label><textarea id="e_nc_dinner" rows="2" placeholder="Наприклад: Омлет, салат, кефір"></textarea></div>
+          <div class="form-row"><label>🍳 Сніданок</label><textarea id="e_nc_breakfast" rows="4" placeholder="Наприклад:
+• Каша гречана з молоком
+• Бутерброд з сиром
+• Чай з лимоном"></textarea></div>
+          <div class="form-row"><label>🍎 Полуденок</label><textarea id="e_nc_snack" rows="4" placeholder="Наприклад:
+1. Яблуко
+2. Печиво
+3. Сік яблучний"></textarea></div>
+          <div class="form-row"><label>🍲 Обід</label><textarea id="e_nc_lunch" rows="6" placeholder="Наприклад:
+Перше: Борщ
+Друге: Котлета з пюре
+Салат: Овочевий
+Напій: Компот"></textarea></div>
+          <div class="form-row"><label>🥛 Підвечірок</label><textarea id="e_nc_evening" rows="4" placeholder="Наприклад:
+- Йогурт натуральний
+- Банан
+- Чай трав'яний"></textarea></div>
+          <div class="form-row"><label>🍛 Вечеря</label><textarea id="e_nc_dinner" rows="4" placeholder="Наприклад:
+Омлет з помідорами
+Салат з огірків
+Кефір"></textarea></div>
 
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
             <button id="save">💾 Зберегти для всіх</button>
@@ -108,7 +143,6 @@
       repoOwner: "Pomasvg",       
       repoName: "menu"
     };
-    // =======================================
 
     let currentData = {};
     let isAdmin = false;
@@ -129,6 +163,60 @@
     function setStatus(text, type = '') {
       statusEl.textContent = text;
       statusEl.className = `status ${type}`;
+    }
+
+    // 👇 ФУНКЦІЯ ДЛЯ КОНВЕРТАЦІЇ ТЕКСТУ З АБЗАЦАМИ
+    function formatMenuText(text) {
+      if (!text) return '—';
+      
+      // Замінюємо "1.", "2." і т.д. на список
+      let formatted = text
+        .replace(/^(\d+\.)\s/gm, '<li>$1 ') // Знаходить "1. текст" на початку рядка
+        .replace(/(\n|^)(•|-)\s/gm, '$1<li>$2 '); // Знаходить "• текст" або "- текст"
+      
+      // Якщо є <li>, обгортаємо в <ol> або <ul>
+      if (formatted.includes('<li>')) {
+        // Визначаємо чи це нумерований список (1., 2.) чи маркований (•, -)
+        const isNumbered = text.match(/^\d+\./m);
+        const listTag = isNumbered ? 'ol' : 'ul';
+        formatted = `<${listTag}>${formatted}</${listTag}>`;
+        
+        // Замінюємо переноси між пунктами списку
+        formatted = formatted.replace(/<\/li>\s*<li>/g, '</li><li>');
+      }
+      
+      return formatted;
+    }
+
+    // 👇 ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ВІДОБРАЖЕННЯ МЕНЮ
+    function renderForDate(iso) {
+      if (!iso) iso = dateInput.value || isoToday();
+      readableDate.textContent = niceDate(iso);
+      const day = currentData[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
+
+      cityArea.innerHTML = '';
+      const cityLunchCard = document.createElement('div');
+      cityLunchCard.className = 'meal';
+      const cityLunchContent = formatMenuText(day.city.lunch);
+      cityLunchCard.innerHTML = `<h4>🍽️ Обід</h4><div class="meal-content">${cityLunchContent || '—'}</div>`;
+      cityArea.appendChild(cityLunchCard);
+
+      nonCityArea.innerHTML = '';
+      const fields = [
+        ['🍳 Сніданок', day.nonCity.breakfast],
+        ['🍎 Полуденок', day.nonCity.snack],
+        ['🍲 Обід', day.nonCity.lunch],
+        ['🥛 Підвечірок', day.nonCity.evening],
+        ['🍛 Вечеря', day.nonCity.dinner]
+      ];
+      
+      fields.forEach(([title, val]) => {
+        const div = document.createElement('div');
+        div.className = 'meal';
+        const content = formatMenuText(val);
+        div.innerHTML = `<h4>${title}</h4><div class="meal-content">${content || '—'}</div>`;
+        nonCityArea.appendChild(div);
+      });
     }
 
     function utf8_to_b64(str) {
@@ -294,34 +382,6 @@
         
         return false;
       }
-    }
-
-    function renderForDate(iso) {
-      if (!iso) iso = dateInput.value || isoToday();
-      readableDate.textContent = niceDate(iso);
-      const day = currentData[iso] || { city: { lunch: '' }, nonCity: { breakfast:'', snack:'', lunch:'', evening:'', dinner:'' } };
-
-      cityArea.innerHTML = '';
-      const cityLunchCard = document.createElement('div');
-      cityLunchCard.className = 'meal';
-      cityLunchCard.innerHTML = `<h4>🍽️ Обід</h4><div>${day.city.lunch || '—'}</div>`;
-      cityArea.appendChild(cityLunchCard);
-
-      nonCityArea.innerHTML = '';
-      const fields = [
-        ['🍳 Сніданок', day.nonCity.breakfast],
-        ['🍎 Полуденок', day.nonCity.snack],
-        ['🍲 Обід', day.nonCity.lunch],
-        ['🥛 Підвечірок', day.nonCity.evening],
-        ['🍛 Вечеря', day.nonCity.dinner]
-      ];
-      
-      fields.forEach(([title, val]) => {
-        const div = document.createElement('div');
-        div.className = 'meal';
-        div.innerHTML = `<h4>${title}</h4><div>${val || '—'}</div>`;
-        nonCityArea.appendChild(div);
-      });
     }
 
     document.getElementById('today').addEventListener('click', () => {
